@@ -31,8 +31,6 @@ class _TodoPageState extends State<TodoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = context.read<TodoBloc>();
-
     return Scaffold(
       appBar: AppBar(title: const Text('To-Do List ✅')),
       body: Padding(
@@ -49,9 +47,9 @@ class _TodoPageState extends State<TodoPage> {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                final task = _controller.text.trim();
-                if (task.isNotEmpty) {
-                  bloc.add(AddTodo(task));
+                final title = _controller.text.trim();
+                if (title.isNotEmpty) {
+                  context.read<TodoBloc>().add(AddTask(title));
                   _controller.clear();
                 }
               },
@@ -59,7 +57,7 @@ class _TodoPageState extends State<TodoPage> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: BlocBuilder<TodoBloc, List<String>>(
+              child: BlocBuilder<TodoBloc, List<Task>>(
                 builder: (context, tasks) {
                   if (tasks.isEmpty) {
                     return const Center(child: Text('No tasks yet.'));
@@ -68,12 +66,27 @@ class _TodoPageState extends State<TodoPage> {
                   return ListView.builder(
                     itemCount: tasks.length,
                     itemBuilder: (context, index) {
+                      final task = tasks[index];
                       return ListTile(
-                        title: Text(tasks[index]),
+                        title: Text(
+                          task.title,
+                          style: TextStyle(
+                            decoration:
+                                task.isDone
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                          ),
+                        ),
+                        leading: Checkbox(
+                          value: task.isDone,
+                          onChanged: (_) {
+                            context.read<TodoBloc>().add(ToggleTask(index));
+                          },
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            bloc.add(RemoveTodo(index));
+                            context.read<TodoBloc>().add(RemoveTask(index));
                           },
                         ),
                       );
