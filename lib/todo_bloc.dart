@@ -58,11 +58,26 @@ class ToggleTask extends TodoEvent {
   ToggleTask(this.index);
 }
 
+class EditTask extends TodoEvent {
+  final int index;
+  final String newTitle;
+  final DateTime? newDueDate;
+  final String? newCategory;
+
+  EditTask({
+    required this.index,
+    required this.newTitle,
+    this.newDueDate,
+    this.newCategory,
+  });
+}
+
 /// BLoC
 class TodoBloc extends Bloc<TodoEvent, List<Task>> {
   final TaskStorageService storage;
 
   TodoBloc(this.storage) : super([]) {
+    // Adding
     on<AddTask>((event, emit) {
       final updated = List<Task>.from(state)..add(
         Task(
@@ -75,15 +90,34 @@ class TodoBloc extends Bloc<TodoEvent, List<Task>> {
       emit(updated);
     });
 
+    // Removing
     on<RemoveTask>((event, emit) {
       final updated = List<Task>.from(state)..removeAt(event.index);
       storage.saveTasks(updated);
       emit(updated);
     });
 
+    // Toggle
     on<ToggleTask>((event, emit) {
       final updated = List<Task>.from(state);
       updated[event.index] = updated[event.index].toggleDone();
+      storage.saveTasks(updated);
+      emit(updated);
+    });
+
+    // Editing
+    on<EditTask>((event, emit) {
+      final updated = List<Task>.from(state);
+      final current = updated[event.index];
+
+      final editedTask = Task(
+        title: event.newTitle,
+        isDone: current.isDone,
+        dueDate: event.newDueDate,
+        category: event.newCategory,
+      );
+
+      updated[event.index] = editedTask;
       storage.saveTasks(updated);
       emit(updated);
     });

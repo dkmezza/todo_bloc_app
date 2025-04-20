@@ -166,11 +166,26 @@ class _TodoPageState extends State<TodoPage> {
                             context.read<TodoBloc>().add(ToggleTask(index));
                           },
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            context.read<TodoBloc>().add(RemoveTask(index));
+
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              _showEditDialog(context, task, index);
+                            } else if (value == 'delete') {
+                              context.read<TodoBloc>().add(RemoveTask(index));
+                            }
                           },
+                          itemBuilder:
+                              (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Edit'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
+                              ],
                         ),
                       );
                     },
@@ -181,6 +196,92 @@ class _TodoPageState extends State<TodoPage> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, Task task, int index) {
+    final titleController = TextEditingController(text: task.title);
+    DateTime? newDate = task.dueDate;
+    String? newCategory = task.category;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Task'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: titleController),
+
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: newDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          newDate = picked;
+                        });
+                      }
+                    },
+                    child: Text(
+                      newDate == null
+                          ? 'Pick Due Date'
+                          : 'Due: ${newDate!.toLocal().toString().split(' ')[0]}',
+                    ),
+                  ),
+
+                  DropdownButton<String>(
+                    isExpanded: true,
+                    value: newCategory,
+                    hint: const Text('Select Category'),
+                    onChanged: (value) {
+                      setState(() {
+                        newCategory = value;
+                      });
+                    },
+                    items:
+                        _categories.map((cat) {
+                          return DropdownMenuItem(value: cat, child: Text(cat));
+                        }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+
+                ElevatedButton(
+                  onPressed: () {
+                    final newTitle = titleController.text.trim();
+                    if (newTitle.isNotEmpty) {
+                      context.read<TodoBloc>().add(
+                        EditTask(
+                          index: index,
+                          newTitle: newTitle,
+                          newDueDate: newDate,
+                          newCategory: newCategory,
+                        ),
+                      );
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
