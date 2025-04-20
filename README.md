@@ -1,16 +1,21 @@
 # ✅ todo_bloc_app
 
-A simple **To-Do List** app built with **Flutter** and **BLoC pattern**.  
-It demonstrates clean state management using `flutter_bloc` for adding and removing tasks dynamically.
+A clean and practical **Flutter To-Do App** built using the **BLoC pattern**, enhanced with features like **task persistence**, **categories**, **due dates**, **editing**, and now—**filtering by category**.
 
 ---
 
 ## ✨ Features
 
-- ➕ Add new tasks
-- ❌ Remove tasks by tapping delete
-- 📦 State managed with BLoC
-- 🧼 Minimalist UI using Flutter's Material design
+- ➕ Add tasks with optional:
+  - 📅 Due Date
+  - 📂 Category
+- ✅ Mark tasks as done
+- 📝 Edit existing tasks
+- ❌ Delete tasks
+- 🔍 Filter tasks by category
+- 💾 Persistent local storage using `shared_preferences`
+- 💡 Built with `flutter_bloc` for robust state management
+- 📱 Clean and user-friendly Material UI
 
 ---
 

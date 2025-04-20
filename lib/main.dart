@@ -36,6 +36,7 @@ class _TodoPageState extends State<TodoPage> {
   final TextEditingController _controller = TextEditingController();
   DateTime? _selectedDate;
   String? _selectedCategory;
+  String? _filterCategory;
 
   final List<String> _categories = [
     'Work',
@@ -128,18 +129,50 @@ class _TodoPageState extends State<TodoPage> {
               child: const Text('Add Task'),
             ),
 
+            // Filter by Category
+            const SizedBox(height: 20),
+            DropdownButton<String>(
+              value: _filterCategory,
+              hint: const Text('Filter by Category'),
+              isExpanded: true,
+              onChanged: (value) {
+                setState(() {
+                  _filterCategory = value;
+                });
+              },
+              items: [
+                const DropdownMenuItem(value: null, child: Text('All')),
+                ..._categories.map(
+                  (cat) => DropdownMenuItem(value: cat, child: Text(cat)),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 20),
             Expanded(
               child: BlocBuilder<TodoBloc, List<Task>>(
                 builder: (context, tasks) {
-                  if (tasks.isEmpty) {
-                    return const Center(child: Text('No tasks yet.'));
+                  final filteredTasks =
+                      _filterCategory == null
+                          ? tasks
+                          : tasks
+                              .where((t) => t.category == _filterCategory)
+                              .toList();
+
+                  if (filteredTasks.isEmpty) {
+                    return const Center(
+                      child: Text('No tasks found for this category.'),
+                    );
                   }
 
                   return ListView.builder(
-                    itemCount: tasks.length,
+                    itemCount: filteredTasks.length,
                     itemBuilder: (context, index) {
-                      final task = tasks[index];
+                      final task = filteredTasks[index];
+                      final originalIndex = tasks.indexOf(
+                        task,
+                      ); // Important for BLoC events!
+
                       return ListTile(
                         title: Text(
                           task.title,
@@ -159,29 +192,31 @@ class _TodoPageState extends State<TodoPage> {
                               Text('Category: ${task.category}'),
                           ],
                         ),
-
                         leading: Checkbox(
                           value: task.isDone,
                           onChanged: (_) {
-                            context.read<TodoBloc>().add(ToggleTask(index));
+                            context.read<TodoBloc>().add(
+                              ToggleTask(originalIndex),
+                            );
                           },
                         ),
-
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) {
                             if (value == 'edit') {
-                              _showEditDialog(context, task, index);
+                              _showEditDialog(context, task, originalIndex);
                             } else if (value == 'delete') {
-                              context.read<TodoBloc>().add(RemoveTask(index));
+                              context.read<TodoBloc>().add(
+                                RemoveTask(originalIndex),
+                              );
                             }
                           },
                           itemBuilder:
-                              (context) => [
-                                const PopupMenuItem(
+                              (context) => const [
+                                PopupMenuItem(
                                   value: 'edit',
                                   child: Text('Edit'),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Text('Delete'),
                                 ),
