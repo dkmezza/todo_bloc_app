@@ -201,12 +201,12 @@ class _TodoPageState extends State<TodoPage> {
 
   void _showEditDialog(BuildContext context, Task task, int index) {
     final titleController = TextEditingController(text: task.title);
-    DateTime? newDate = task.dueDate;
-    String? newCategory = task.category;
+    DateTime? selectedDate = task.dueDate;
+    String? selectedCategory = task.category;
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
@@ -215,36 +215,38 @@ class _TodoPageState extends State<TodoPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(controller: titleController),
-
                   const SizedBox(height: 10),
+
+                  // Date Picker
                   ElevatedButton(
                     onPressed: () async {
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: newDate ?? DateTime.now(),
+                        initialDate: selectedDate ?? DateTime.now(),
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2100),
                       );
                       if (picked != null) {
                         setState(() {
-                          newDate = picked;
+                          selectedDate = picked;
                         });
                       }
                     },
                     child: Text(
-                      newDate == null
+                      selectedDate == null
                           ? 'Pick Due Date'
-                          : 'Due: ${newDate!.toLocal().toString().split(' ')[0]}',
+                          : 'Due: ${selectedDate!.toLocal().toString().split(' ')[0]}',
                     ),
                   ),
 
+                  // Category Dropdown
                   DropdownButton<String>(
                     isExpanded: true,
-                    value: newCategory,
+                    value: selectedCategory,
                     hint: const Text('Select Category'),
                     onChanged: (value) {
                       setState(() {
-                        newCategory = value;
+                        selectedCategory = value!;
                       });
                     },
                     items:
@@ -256,23 +258,24 @@ class _TodoPageState extends State<TodoPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancel'),
                 ),
-
                 ElevatedButton(
                   onPressed: () {
                     final newTitle = titleController.text.trim();
                     if (newTitle.isNotEmpty) {
-                      context.read<TodoBloc>().add(
-                        EditTask(
-                          index: index,
-                          newTitle: newTitle,
-                          newDueDate: newDate,
-                          newCategory: newCategory,
-                        ),
-                      );
-                      Navigator.of(context).pop();
+                      Navigator.of(dialogContext).pop(); // close dialog first
+                      Future.microtask(() {
+                        this.context.read<TodoBloc>().add(
+                          EditTask(
+                            index: index,
+                            newTitle: newTitle,
+                            newDueDate: selectedDate,
+                            newCategory: selectedCategory,
+                          ),
+                        );
+                      });
                     }
                   },
                   child: const Text('Save'),
